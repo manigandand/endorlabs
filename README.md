@@ -7,7 +7,8 @@
 - schema
   -- containts the different object types which implements the `Object` interface.
 - store
-  - store.go // inits the different db layer of choice
+  - store.go
+    -- inits the different db layer of choice
   - adapter
     -- db interface: `ObjectDB` store interface declarations.
   - adaptee
@@ -30,6 +31,15 @@ make run
 
 ```go
 package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"reflect"
+
+	"github.com/manigandand/endorlabs/store"
+)
 
 // Bird implements Object interface
 type Bird struct {
@@ -64,7 +74,9 @@ func (p *Bird) SetName(s string) {
 }
 
 func main() {
-    bird := &schema.Bird{
+	db := store.Init("inmemory")
+
+	bird := &schema.Bird{
 		Name:   "Peacock",
 		Family: "Phasianidae",
 	}
@@ -85,7 +97,7 @@ func main() {
 	}
 	fmt.Println(birdRes)
 
-    bird2 := &schema.Bird{
+	bird2 := &schema.Bird{
 		Name:   "Owl",
 		Family: "Strigiformes",
 	}
