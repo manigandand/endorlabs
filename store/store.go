@@ -5,24 +5,25 @@ import (
 	"log"
 
 	"github.com/manigandand/endorlabs/store/adaptee/inmem"
+	"github.com/manigandand/endorlabs/store/adaptee/sqlite"
 	"github.com/manigandand/endorlabs/store/adapter"
 )
 
-// Store global store connection interface
-var Store adapter.ObjectDB
-
 // Init loads the sample data and prepares the store layer
-func Init(dbType string) {
+func Init(dbType string) adapter.ObjectDB {
+	var store adapter.ObjectDB
+
 	// store inmemory adapter ...
 	switch dbType {
 	case "inmemory":
-		Store = inmem.NewAdapter()
+		store = inmem.NewAdapter()
 	case "sqlite":
-		// Store = psql.NewAdapter()
-	case "cloudsqlpostgres":
+		store = sqlite.NewAdapter("")
 	}
-	if Store == nil {
+
+	if store == nil {
 		log.Fatalf("🦠store initialize failed 👎")
 	}
-	log.Println("Inited Store...👍")
+	log.Println("Inited store...👍")
+	return store
 }
