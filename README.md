@@ -1,6 +1,6 @@
 ## Store Layer:
 
-    - Implements the `ObjectDB` store interface. This implements adapter pattern.
+Implements the `ObjectDB` store interface. This implements adapter pattern.
 
 > Directory struct
 
