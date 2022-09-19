@@ -1,6 +1,10 @@
 package schema
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/manigandand/adk/errors"
+)
 
 // Animal implements Object interface
 type Animal struct {
@@ -33,4 +37,14 @@ func (p *Animal) SetID(s string) {
 // SetName replace the object name
 func (p *Animal) SetName(s string) {
 	p.Name = s
+}
+
+// Validate the request
+func (p *Animal) Validate() *errors.AppError {
+	if p.Name == "" {
+		return errors.KeyRequired("name")
+	}
+	p.ID = ""
+
+	return nil
 }

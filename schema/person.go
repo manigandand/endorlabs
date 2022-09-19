@@ -3,6 +3,8 @@ package schema
 import (
 	"reflect"
 	"time"
+
+	"github.com/manigandand/adk/errors"
 )
 
 // Person implements Object interface
@@ -37,4 +39,14 @@ func (p *Person) SetID(s string) {
 // SetName replace the object name
 func (p *Person) SetName(s string) {
 	p.Name = s
+}
+
+// Validate the request
+func (p *Person) Validate() *errors.AppError {
+	if p.Name == "" {
+		return errors.KeyRequired("name")
+	}
+	p.ID = ""
+
+	return nil
 }
