@@ -133,3 +133,9 @@ func (c *Client) DeleteObject(ctx context.Context, id string) error {
 
 	return nil
 }
+
+// Close close the db connections.
+func (c *Client) Close() {
+	db, _ := c.db.DB()
+	db.Close()
+}

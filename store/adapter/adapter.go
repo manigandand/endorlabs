@@ -38,4 +38,6 @@ type ObjectDB interface {
 
 	// DeleteObject will delete the object.
 	DeleteObject(ctx context.Context, id string) error
+
+	Close()
 }
