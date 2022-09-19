@@ -14,4 +14,4 @@ build_gobin:
 	env GOOS=linux GARCH=amd64 CGO_ENABLED=0 go build -o endorlabs -ldflags="-X 'main.VersionLabel=$(versionLabel)'" .
 
 run: build
-	./endorlabs store=inmemory
+	./endorlabs config.json

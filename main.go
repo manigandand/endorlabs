@@ -1,88 +1,79 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/manigandand/endorlabs/schema"
+	eapi "github.com/manigandand/endorlabs/api"
+	"github.com/manigandand/endorlabs/config"
 	"github.com/manigandand/endorlabs/store"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/manigandand/adk/api"
+	appmiddleware "github.com/manigandand/adk/middleware"
+	"github.com/rs/cors"
 )
 
 var (
-	dbType = flag.String("store", "inmemory", "store choice")
+	name    = "endor labs"
+	version = "1.0.0"
 )
 
 func main() {
-	flag.Parse()
-	bg := context.Background()
+	if len(os.Args) < 2 {
+		log.Fatal("Wrong length of arguments")
+	}
 
-	db := store.Init(*dbType)
+	config.Initialize(os.Args[1:]...)
+
+	db := store.Init(config.DBType)
 	if db == nil {
 		log.Fatalf("🦠store initialize failed 👎")
 	}
+	api.InitService(name, version)
 
-	per1 := &schema.Person{
-		Name:     "Manigandan",
-		LastName: "Dharmalingam",
-		Birthday: "22/07/1993",
-	}
+	router := chi.NewRouter()
+	cors := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
+		AllowedHeaders: []string{
+			"Origin", "Authorization", "Access-Control-Allow-Origin",
+			"Access-Control-Allow-Header", "Accept",
+			"Content-Type", "X-CSRF-Token",
+		},
+		ExposedHeaders: []string{
+			"Content-Length", "Access-Control-Allow-Origin", "Origin",
+		},
+		AllowCredentials: true,
+		MaxAge:           300,
+	})
 
-	if err := db.Store(bg, per1); err != nil {
-		log.Fatal("cant store person 1: ", err.Error())
-	}
+	// cross & loger middleware
+	router.Use(cors.Handler)
+	router.Use(
+		appmiddleware.Logger,
+		appmiddleware.Recoverer,
+	)
 
-	per1Res, err := db.GetObjectByID(bg, per1.ID)
-	if err != nil {
-		log.Fatal("cant get person 1 by id: ", err.Error())
-	}
-	fmt.Println(per1Res)
+	router.Route("/", eapi.Routes)
 
-	per1Res, err = db.GetObjectByName(bg, per1.Name)
-	if err != nil {
-		log.Fatal("cant get person 1 by name: ", err.Error())
-	}
-	fmt.Println(per1Res)
+	interruptChan := make(chan os.Signal, 1)
+	go func() {
+		signal.Notify(interruptChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		// Block until we receive our signal.
+		<-interruptChan
 
-	ani1 := &schema.Animal{
-		Name:    "scooby",
-		Type:    "dog",
-		OwnerID: "manigandan",
-	}
-	if err := db.Store(bg, ani1); err != nil {
-		log.Fatal("cant store animal 1: ", err.Error())
-	}
-	ani2 := &schema.Animal{
-		Name:    "tucker",
-		Type:    "dog",
-		OwnerID: "manigandan",
-	}
-	if err := db.Store(bg, ani2); err != nil {
-		log.Fatal("cant store animal 2: ", err.Error())
-	}
+		log.Println("Shutting down db...")
+		store.Store.Close()
+		os.Exit(0)
+	}()
 
-	objs, err := db.ListObjects(bg, "*schema.Animal")
-	if err != nil {
-		log.Fatal("cant get objects animals kind: ", err.Error())
+	log.Println("Starting server on port:", config.Port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", config.Port), router); err != nil {
+		log.Fatal(err)
 	}
-	objsByts, _ := json.Marshal(objs)
-	fmt.Println("Animals: ", string(objsByts))
-
-	per2 := &schema.Person{
-		Name:     "Jeff",
-		LastName: "Hardy",
-		Birthday: "22/07/1993",
-	}
-
-	if err := db.Store(bg, per2); err != nil {
-		log.Fatal("cant store person 2: ", err.Error())
-	}
-	objs, err = db.ListObjects(bg, "*schema.Person")
-	if err != nil {
-		log.Fatal("cant get objects person kind: ", err.Error())
-	}
-	objsByts, _ = json.Marshal(objs)
-	fmt.Println("Person: ", string(objsByts))
 }
